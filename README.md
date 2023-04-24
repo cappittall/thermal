@@ -4,7 +4,7 @@
 
 ## Kurulum  - Installation
 
-1. Python  kurulu olduğundan emin olun,  - First, ensure that you have Python 3.9 installed on your system. 
+1. Python  kurulu olduğundan emin olun.  (First, ensure that you have Python 3.9 installed on your system)
 
 ```
 python --version
@@ -12,10 +12,11 @@ python --version
 
 2. Github tan klonlayın - Clone the repository:
 
-İleride olası güncellemer (`git pull`) için clone yapınız! Zip ile yüklemeyin.
+İleride olası güncellemer (`git pull`) için clone yapınız! Zip ile yüklemeyin. 
 ```
 git clone https://github.com/cappittall/thermal.git
 ```
+
 
 
 

@@ -2,7 +2,8 @@ data/bw
 data/dataset
 data/logimg
 data/logs
-data/videos
+data/videos/*.mp4
 models/deep_sort
 models/edges
-
+# Un-ignore 1.mp4
+!data/videos/1.mp4
