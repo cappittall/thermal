@@ -24,7 +24,7 @@ git clone https://github.com/cappittall/thermal.git
 
 ```
 cd thermal
-python3.9 -m venv myenv
+python3 -m venv myenv
 ```
 
 
