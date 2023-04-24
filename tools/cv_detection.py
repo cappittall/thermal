@@ -232,6 +232,9 @@ def process_markers_and_draw_bboxes(image, markers, model, min_size=40, max_iou=
         if model == "opencv":
             blue_percentage = calculate_blue_percentage(image, (x, y, x2, y2))
             red_yellow_percentage = calculate_red_yellow_percentage(image, (x, y, x2, y2))
+        else:
+            blue_percentage = 0.0
+            red_yellow_percentage= 1.0
             
         is_blue = blue_percentage < blue_threshold
         is_red_yellow = red_yellow_percentage > red_yellow__threshold
