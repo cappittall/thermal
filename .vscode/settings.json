@@ -1,0 +1,7 @@
+{
+    "python.analysis.extraPaths": [
+        "./tools/deep_sort",
+        "./tools",
+        "./tools/ByteTrack"
+    ]
+}

@@ -1,0 +1,13 @@
+fastapi==0.95.1
+filterpy==1.4.5
+imutils==0.5.4
+lap==0.4.0
+matplotlib==3.7.1
+numpy==1.24.1
+opencv_python==4.7.0.72
+pydantic==1.10.6
+scipy==1.9.1
+skimage==0.0
+starlette==0.26.1
+supervision==0.1.0
+tensorflow==2.11.0

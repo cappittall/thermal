@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="static/img/favicon.png" />
+    <title>Ziyaretçi takip </title> 
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            display: block;
+            justify-content:center;
+            align-items: center;
+            height: 100vh;
+            margin: 50px 200px;
+        }
+        .container {
+            display: flex;
+     
+        }
+     
+        #frame, #image-container {
+            position:fixed;
+            top:5px;
+            left:5px;
+            width:970px;
+            height:730px;
+            z-index:-1;
+            border: 10px solid green;
+            position: absolute;
+
+        }
+        #frameText {
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            font-weight: bold;
+            color:red;
+            /* You can add other styles like color, font-family, etc. */
+        }
+
+        .line {
+            position: absolute;
+            z-index:2;
+        }
+        input[type=range] {
+            min-width:250px;
+        }
+        input[type=checkbox]{
+ 
+        }
+        #reLoadbtn {
+            position:fixed;
+            bottom:15px;
+            left:60px;
+            display:none;
+            z-index:10;
+
+        }
+        @keyframes blink {
+            0%, 49% {
+                opacity: 1;
+            }
+            50%, 100% {
+                opacity: 0;
+            }
+        }
+        .red-area {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.3); /* Transparent red */
+        }
+
+        .blink {
+            animation: blink 1s linear infinite;
+            color:red;
+            font-size: 28px;
+            font-weight: bold;
+    
+        }
+
+       /* Add this new CSS class to your CSS */
+        #detLinesContainer {
+            position: fixed;
+            right: 85px;
+            top: 5px;
+            max-height: 650px;
+            overflow-y: auto;         
+            border: 5px solid green;
+            padding:5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="container" class="container">
+        <div>
+
+        <div class="form-group row">
+                <label for="videoList" class="col-sm-2 col-form-label">Videolar</label>
+                <div class="col-sm-10">
+                    <select name="islem_turu" required id="videoList" class="control form-control">
+                        <option value="0" disabled>Canlı Camera</option>
+                        <option value="all" >Hepsi</option>
+                        {% for key, value in videos.items() %}
+                        <option value="{{ key }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="modelList" class="col-sm-2 col-form-label">Modeller</label>
+                <div class="col-sm-10">
+                    <select name="model_secim" required id="modelList" class="control form-control">
+                        <option value="0" disabled> MODEL </option>
+                        <option value="opencv" > OpenCv </option>
+                        {% for key, value in models.items() %}
+                        <option value="{{ key }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+     
+            <br><hr/> <br>
+            <div>
+                <label >
+                    <input class="form-check-input" type="radio" id="radioButton1" name="lineRadioGroup" checked> Dikey Sayım Çizgisi -  
+                    <input class="" type="range" id="slider1" min="1" max="99" value="{{ pos[0] }}">
+                    <span class="form-check-label" id="value1">%{{ pos[0] }}</span>
+                </label>
+            </div>
+   
+            <div >
+                <label >
+                    <input class="form-check-input" type="radio" id="radioButton2" name="lineRadioGroup"> Yatay Sayım Çizgisi -  
+                    <input type="range" id="slider3" min="1" max="99" value="{{ pos[1] }}">
+                    <span id="value2">%{{ pos[1] }}</span>
+                </label>
+            </div>
+
+            <br><hr/> <br>
+            <div>
+                <label>
+                    <input class="form-check-input" type="checkbox" id="checkbox1" checked> Model Hassasiyet ayarı . 
+                    <input type="range" id="slider4" min="1" max="99" value="{{ pos[2] }}">
+                    <span id="value3">%{{ pos[2] }}</span>
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input class="form-check-input" type="checkbox" id="checkbox2" checked> Maksimum mavi oranı (içermez)  
+                    <input type="range" id="slider5" min="0" max="100" value="{{ pos[3] }}">
+                    <span id="value3">%{{ pos[3] }}</span>
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input class="form-check-input" type="checkbox" id="checkbox3" checked> Minimum sarı-kırmızı (içerir) 
+                    <input type="range" id="slider6" min="0" max="100" value="{{ pos[4] }}">
+                    <span id="value3">%{{ pos[4] }}</span>
+                </label>
+            </div>
+            <br>
+            <div>
+                <label>
+                    <input class="form-check-input" type="checkbox" id="checkbox4" checked> Tracker, hafıza sayısı   
+                    <input type="range" id="slider6" min="0" max="30" value="{{ pos[5] }}">
+                    <span id="value3">%{{ pos[5] }}</span>
+                </label>
+            </div>
+            <br><br>
+                
+        </div>
+        
+    </div>
+    
+    <div id="im-line-container"> 
+        <div id="frame">
+            <canvas id="canvas" width="950" height="710"></canvas>
+            <div class="line" id="line0" style="left: {{ pos[0] }}%; top: 0; bottom: 0; width: 3px; background: green;"></div>
+            <div class="line" id="line1" style="top: {{ pos[1] }}%; left: 0; right: 0; height: 3px; background: green;"></div>
+        </div>
+        <div id="detLinesContainer">
+            <ul id="det-lines-list"></ul>
+        </div>
+    </div>
+    <br/>
+
+    
+
+    <div class='blink' id="waitMessage" style="display:none;"> Lütfen bekleyiniz... </div>
+    <button id="submitBtn">Gönder v1</button>
+    <div id="image-container"></div>
+    <button id="reLoadbtn" onclick="reloadPage()">DURDUR/DÖN!</button>
+
+    <script>
+        const checkboxes = [...document.querySelectorAll("input[type=checkbox]")];
+        const radios = [...document.querySelectorAll("input[type=radio]")];
+        const sliders = [...document.querySelectorAll("input[type=range]")];
+        const values = [...document.querySelectorAll("span")];
+        const lines = [...document.querySelectorAll(".line")];
+
+        const pos = {{ pos | tojson }};
+        const videos = {{ videos | tojson }}
+        
+        let videoLoop = videoList.value == "all" ? true:false;
+        let selectedVideo;
+        let nextVideo;
+
+        const urls = ["/pedestal-tflite-model5x" ];
+        const domainEndPoint =  urls[0]
+        let loopback = true; 
+
+        function updateSliderValue(index, sliderValue) {
+            values[index].textContent = '%' + sliderValue;
+    
+            if (index === 0) {
+                lines[index].style.left = `${sliderValue}%`;
+            } else if (index === 1) {
+                lines[index].style.top = `${sliderValue}%`;
+            }
+    
+            pos[index] = parseInt(sliderValue);
+        }
+
+        sliders.forEach((slider, index) => {
+            slider.addEventListener("input", () => {
+                updateSliderValue(index, slider.value);
+            });
+        });
+        
+        function toggleLineVisibility() {
+                const activeRadioIndex = localStorage.getItem("activeRadioIndex") || 0;
+                lines.forEach((line, index) => {
+                    line.style.display = activeRadioIndex == index ? "block" : "none";
+                });
+            }
+
+        function setSelectedOption(selectElementId, localStorageKey) {
+            const selectedValue = localStorage.getItem(localStorageKey);
+            const selectElement = document.getElementById(selectElementId);
+    
+            if (selectedValue) {
+                selectElement.value = selectedValue;
+            }
+    
+            selectElement.addEventListener("change", () => {
+                localStorage.setItem(localStorageKey, selectElement.value);
+            });
+        }
+        
+
+        function setCheckedState(inputElementId, localStorageKey) {
+            const storedValue = localStorage.getItem(localStorageKey);
+            const inputElement = document.getElementById(inputElementId);
+    
+            if (storedValue !== null) {
+                inputElement.checked = storedValue === "true";
+            }
+    
+            inputElement.addEventListener("change", () => {
+                localStorage.setItem(localStorageKey, inputElement.checked);
+                toggleLineVisibility(); // Update line visibility when a radio button is changed
+            });
+        }
+    
+        function setRadioButtonsState(radioGroupName, localStorageKey) {
+            const radioButtons = document.getElementsByName(radioGroupName);
+            const storedValue = localStorage.getItem(localStorageKey);
+    
+            if (storedValue) {
+                radioButtons[parseInt(storedValue)].checked = true;
+            }
+    
+            radioButtons.forEach((radioButton, index) => {
+                radioButton.addEventListener("change", () => {
+                    if (radioButton.checked) {
+                        localStorage.setItem(localStorageKey, index);
+                        toggleLineVisibility(); // Update line visibility when a radio button is changed
+                    }
+                });
+            });
+        }
+ 
+        document.addEventListener("DOMContentLoaded", () => {
+            setSelectedOption("videoList", "selectedVideo");
+            setSelectedOption("modelList", "selectedModel");
+            
+            videoLoop = videoList.value == "all" ? true:false;
+            selectedVideo = videoList.value ;
+            setRadioButtonsState("lineRadioGroup", "activeRadioIndex");
+            checkboxes.forEach((checkbox, index) => {
+                if (index > 1) { // Skip the radio buttons
+                    setCheckedState(checkbox.id, `checkbox${index - 1}Checked`);
+                }
+            });
+    
+            toggleLineVisibility();
+        });
+
+        videoList.addEventListener('change', ()=> {
+            videoLoop = videoList.value == "all" ? true:false;
+            selectedVideo = videoList.value ;
+            console.log ('3 videoLoop', videoLoop, selectedVideo )
+        })
+
+        
+        function* videoGenerator(videos) {
+            // Convert the videos object to an array of values
+            const videoArray = Object.values(videos);
+            for (const video of videoArray) {
+                yield video;
+            }
+        }
+
+        const videoIter = videoGenerator(videos);
+               // Only get the next video if videoLoop is true
+        if (videoLoop) {
+            nextVideo = videoIter.next();
+            selectedVideo = nextVideo.value;
+            console.log('1 VideoLoop',videoLoop, selectedVideo)
+        } else {
+            selectedVideo = videoList.value ;
+            console.log('2 VideoLoop', videoLoop, selectedVideo)
+            
+        }
+
+        async function fetchAndRenderFrame() {
+            
+            const selectedModel = modelList.value
+            container.style.display = 'none';
+            submitBtn.style.display = 'none';
+            reLoadbtn.style.display = 'block';
+            waitMessage.style.display = 'block';
+        
+            frame.style.zIndex = 3;
+
+            const lineValues = sliders.map((slider) => parseInt(slider.value));
+            const checkboxValues = checkboxes.map((checkbox) => checkbox.checked);
+            const radioValues = radios.map((radio) => radio.checked);
+
+
+            const checkboxsValues = checkboxes.map((checkbox) => checkbox.checked);
+            const useTracker = checkboxsValues[3]
+
+            try {
+                const response = await fetch(domainEndPoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ lineValues: lineValues, radioValues: radioValues, selectedVideo: selectedVideo, selectedModel: selectedModel, start: loopback, use_tracker: useTracker }),
+                });
+
+                if (response.ok) {
+
+                    waitMessage.style.opacity = 0; // Hide the element
+                    waitMessage.classList.remove("blink"); // Stop the blinking animation
+
+                    const response_data = await response.json();
+                    if (response_data && response_data.image) {
+                        const img_base64 = response_data.image;
+                        const det_lines = response_data.det_lines;
+                        const base_path = response_data.base_path;
+                        const img = new Image();
+                        img.src = `data:image/png;base64,${img_base64}`;
+                    
+                    
+                        // Render det_lines
+                        const reversedLines = det_lines.reverse();
+                        detLinesContainer.innerHTML = reversedLines.map(line => {
+                            const [text, link] = line.split('#');
+                            return `<li>${text} - <a href="/image/${link}" target="_blank">Link</a></li>`;
+                        }).join('');
+                        
+                        img.id = 'result-img';
+                    
+                        // Wait for the image to load before fetching the next frame
+                        img.onload = () => {
+                            // Draw the image on the canvas
+                            const canvas = document.getElementById("canvas");
+                            const ctx = canvas.getContext("2d");
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            fetchAndRenderFrame(); // Recursively fetch the next frame
+                        };
+                    } else {
+                            
+                            if (!nextVideo.done && videoLoop) {
+                                nextVideo = videoIter.next();
+                                selectedVideo = nextVideo.value;
+                                console.log("Switching to the next video:", selectedVideo);
+                                fetchAndRenderFrame(); // Fetch frames for the next video
+                            } else {
+                                console.log("All videos have ended. No more frames to fetch.");
+                                // Stop fetching frames and handle the end of the video sequence as needed
+                                videoLoop = false
+                            }
+                    }
+                } else {
+                    console.error("Error: Response not ok");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        submitBtn.addEventListener("click", fetchAndRenderFrame);
+
+        radioButton1.addEventListener("change", () => {
+            localStorage.setItem("activeRadioIndex", 0);
+            toggleLineVisibility();
+        });
+    
+        radioButton2.addEventListener("change", () => {
+            localStorage.setItem("activeRadioIndex", 1);
+            toggleLineVisibility();
+        });
+
+        async function reloadPage() {
+            loopback = false;
+            videoLoop = false;
+            setTimeout(()=>{
+                location.reload(); 
+            },1000)
+            
+        }
+    </script>
+</body>
+</html>
+
