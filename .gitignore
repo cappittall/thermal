@@ -7,3 +7,4 @@ models/deep_sort
 models/edges
 # Un-ignore 1.mp4
 !data/videos/1.mp4
+tools/deep_sort
