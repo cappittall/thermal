@@ -4,7 +4,7 @@
 
 ## Kurulum  - Installation
 
-1. Python 3.9 kurulu olduğundan emin olun, Bazı paketler 3.9 ile çalışmaktadır. - First, ensure that you have Python 3.9 installed on your system. (Some packages required Python 3.9)
+1. Python  kurulu olduğundan emin olun,  - First, ensure that you have Python 3.9 installed on your system. 
 
 ```
 python --version
@@ -12,9 +12,11 @@ python --version
 
 2. Github tan klonlayın - Clone the repository:
 
+İleride olası güncellemer (`git pull`) için clone yapınız! Zip ile yüklemeyin.
 ```
-git clone ...
+git clone https://github.com/cappittall/thermal.git
 ```
+
 
 
 3. Sanal ortam oluşturma - Create a Python virtual environment:
