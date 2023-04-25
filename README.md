@@ -80,7 +80,7 @@ Model [TensorFlow](https://www.tensorflow.org/lite) Lite modelidir. Bu modelde, 
 Ayrıca [40 pinli](https://coral.ai/docs/dev-board/datasheet/) giriş çıkış pinlerinden alarm yada başka bir sistemi tetiklemek için gerekli sinyal çıkışı alınabilecektir. Bu son ayarlamalar cihaz üzerinde yapılacaktır. 
 
 
-# BONUS : Sadece opencv ile yaya takip ayrı bi klass olarak ayrıldı:
+## BONUS : Sadece opencv ile yaya takip ayrı bi klass olarak ayrıldı:
 
 ```
 from tools.pedesterian_detector import CV2PedestrianDetector
