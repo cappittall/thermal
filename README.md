@@ -93,5 +93,5 @@ opencv_detector = CV2PedestrianDetector()
 Döngü içinde:
 
 ```
-opencv_detector.preprocess_image_and_detect_pedestrian(frame.copy(), BLUE_THRESHOLD, RED_THRESHOLD)
+preprocessed_image, image_with_bbox, detected_objects = opencv_detector.preprocess_image_and_detect_pedestrian(frame.copy(), BLUE_THRESHOLD, RED_THRESHOLD)
 ```
