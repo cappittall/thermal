@@ -82,9 +82,11 @@ Ayrıca [40 pinli](https://coral.ai/docs/dev-board/datasheet/) giriş çıkış 
 
 # BONUS : Sadece opencv ile yaya takip ayrı bi klass olarak ayrıldı:
 
-from tools.pedesterian_detector import CV2PedestrianDetector
-
 ```
+from tools.pedesterian_detector import CV2PedestrianDetector
+...
+...
+
 opencv_detector = CV2PedestrianDetector()
 ```
 
