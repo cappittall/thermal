@@ -27,6 +27,7 @@ import time
 import tensorflow as tf
 
 from sort.sort import Sort
+from tools.pedesterian_detector import CV2PedestrianDetector
 
 from dataclasses import dataclass
 import supervision
@@ -173,7 +174,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     # global variables
     global cap, interpreter, VIDEO_PATH, MODEL_PATH, frame_count, \
             tracker, tracker_histrory, alert, det_line_pre, trdata, time2, \
-            line_counter, line_annotator, box_annotator
+            line_counter, line_annotator, box_annotator, pedesterian_detector_with_cv2
     
     # stoping loop setups
     if not data.start:
@@ -209,6 +210,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         line_counter = LineCounter(start=LINE_START, end=LINE_END )
         line_annotator = LineCounterAnnotator(thickness=1, text_thickness=1, text_scale=1)
         box_annotator = BoxAnnotator(color=ColorPalette(), thickness=1, text_thickness=1, text_scale=1)
+        pedesterian_detector_with_cv2 = CV2PedestrianDetector()
         
     success, im = cap.read()
     if success:
@@ -222,7 +224,8 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             # trackers.clear()                              
             if data.selectedModel == "opencv":
                 preprocessed_image, image_with_bbox, detected_objects = \
-                    preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
+                    pedesterian_detector_with_cv2.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
+                    
                 frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)
                 
             elif data.selectedModel == "thermal3":

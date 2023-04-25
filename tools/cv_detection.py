@@ -56,6 +56,37 @@ def counting_pedestrian(yon, roi, filtered_bboxes, frame):
 
     return count_up_to_down, count_down_to_up, count_left_to_right, count_right_to_left
 
+def create_pascal_voc_annotation(filename, bboxes, width, height, output_dir='data/bw/annotations'):
+    # Create the root element and set the required attributes
+    root = ET.Element('annotation')
+    ET.SubElement(root, 'folder').text = 'images'
+    ET.SubElement(root, 'filename').text = filename
+
+    size = ET.SubElement(root, 'size')
+    ET.SubElement(size, 'width').text = str(width)
+    ET.SubElement(size, 'height').text = str(height)
+    ET.SubElement(size, 'depth').text = '3'
+
+    # Create an object element for each bounding box
+    for bbox in bboxes:
+        x, y, w, h = bbox
+        obj = ET.SubElement(root, 'object')
+        ET.SubElement(obj, 'name').text = 'pedestrian'
+        ET.SubElement(obj, 'pose').text = 'Unspecified'
+        ET.SubElement(obj, 'truncated').text = '0'
+        ET.SubElement(obj, 'difficult').text = '0'
+
+        bndbox = ET.SubElement(obj, 'bndbox')
+        ET.SubElement(bndbox, 'xmin').text = str(x)
+        ET.SubElement(bndbox, 'ymin').text = str(y)
+        ET.SubElement(bndbox, 'xmax').text = str(x + w)
+        ET.SubElement(bndbox, 'ymax').text = str(y + h)
+
+    # Save the XML annotation to a file
+    tree = ET.ElementTree(root)
+    os.makedirs(output_dir, exist_ok=True)
+    tree.write(os.path.join(output_dir, f'{filename.split(".")[0]}.xml'))
+
 # Modify the bbox_iou function to accept both normalized and non-normalized coordinates
 def bbox_iou(bbox1, bbox2, width, height, bbox1_normalized=True, bbox2_normalized=True):
     y1_min, x1_min, y1_max, x1_max = bbox1
@@ -139,37 +170,6 @@ def is_bbox_inside(bbox1, bbox2):
     x2, y2, w2, h2 = bbox2
 
     return x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
-
-def create_pascal_voc_annotation(filename, bboxes, width, height, output_dir='data/bw/annotations'):
-    # Create the root element and set the required attributes
-    root = ET.Element('annotation')
-    ET.SubElement(root, 'folder').text = 'images'
-    ET.SubElement(root, 'filename').text = filename
-
-    size = ET.SubElement(root, 'size')
-    ET.SubElement(size, 'width').text = str(width)
-    ET.SubElement(size, 'height').text = str(height)
-    ET.SubElement(size, 'depth').text = '3'
-
-    # Create an object element for each bounding box
-    for bbox in bboxes:
-        x, y, w, h = bbox
-        obj = ET.SubElement(root, 'object')
-        ET.SubElement(obj, 'name').text = 'pedestrian'
-        ET.SubElement(obj, 'pose').text = 'Unspecified'
-        ET.SubElement(obj, 'truncated').text = '0'
-        ET.SubElement(obj, 'difficult').text = '0'
-
-        bndbox = ET.SubElement(obj, 'bndbox')
-        ET.SubElement(bndbox, 'xmin').text = str(x)
-        ET.SubElement(bndbox, 'ymin').text = str(y)
-        ET.SubElement(bndbox, 'xmax').text = str(x + w)
-        ET.SubElement(bndbox, 'ymax').text = str(y + h)
-
-    # Save the XML annotation to a file
-    tree = ET.ElementTree(root)
-    os.makedirs(output_dir, exist_ok=True)
-    tree.write(os.path.join(output_dir, f'{filename.split(".")[0]}.xml'))
 
 # filter abonormal shapes 
 def is_valid_aspect_ratio(bbox, min_ratio=0.4, max_ratio=1.8):

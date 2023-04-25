@@ -1,6 +1,6 @@
 # İnsan trafiği sayacı
 
-Özel kameradan gelen (kişi yüzlerinden therma kameradan) görüntüleri işleyerek magazaya giriş çıkış yapan insanların sayımı.
+Özel kameradan gelen (kişi yüzlerinden thermal kameradan) görüntüleri işleyerek magazaya giriş çıkış yapan insanların sayımı.
 
 ## Kurulum  - Installation
 
