@@ -78,3 +78,18 @@ Model [TensorFlow](https://www.tensorflow.org/lite) Lite modelidir. Bu modelde, 
 100 milisaniyenin altında işleyerek gerçek zamanlı çalıştıracaktır. [örnek](https://www.youtube.com/watch?v=uXgXhxCrrxg) çalışma (Besaş Ekmek Fabrikası)
 
 Ayrıca [40 pinli](https://coral.ai/docs/dev-board/datasheet/) giriş çıkış pinlerinden alarm yada başka bir sistemi tetiklemek için gerekli sinyal çıkışı alınabilecektir. Bu son ayarlamalar cihaz üzerinde yapılacaktır. 
+
+
+# BONUS : Sadece opencv ile yaya takip ayrı bi klass olarak ayrıldı:
+
+from tools.pedesterian_detector import CV2PedestrianDetector
+
+```
+opencv_detector = CV2PedestrianDetector()
+```
+
+Döngü içinde:
+
+```
+opencv_detector.preprocess_image_and_detect_pedestrian(frame.copy(), BLUE_THRESHOLD, RED_THRESHOLD)
+```

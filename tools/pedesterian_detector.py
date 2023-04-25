@@ -178,7 +178,7 @@ class CV2PedestrianDetector:
 
         return filtered_bboxes_normalized
 
-    def preprocess_image_and_detect_pedestrian(self, image, blue_threshold, red_yellow__threshold, model, min_size=40, max_iou=0.5, maskSize=5, threshold_value=0.5, erode_iterations=1, dilate_iterations=1):
+    def preprocess_image_and_detect_pedestrian(self, image, blue_threshold, red_yellow__threshold, model="opencv", min_size=40, max_iou=0.5, maskSize=5, threshold_value=0.5, erode_iterations=1, dilate_iterations=1):
         blurred_image = self.convert_to_grayscale_and_blur(image)
         thresh_image = self.threshold_image(blurred_image, threshold_value)
         dilated_image2 = self.apply_morphological_operations(thresh_image, erode_iterations, dilate_iterations)
