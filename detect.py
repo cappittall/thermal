@@ -159,7 +159,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     DETECTION_THRESHOLD = data.lineValues[2] / 100
     BLUE_THRESHOLD = data.lineValues[3] / 100
     RED_THRESHOLD = data.lineValues[4] / 100
-    
+    MIN_BOX_SIZE = data.lineValues[6] 
     yon = "horizontal" if data.radioValues[1] else "vertical"
     roi = data.lineValues[data.radioValues.index(True)] / 100 
     # screen image size 
@@ -225,14 +225,14 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             # trackers.clear()                              
             if data.selectedModel == "opencv":
                 preprocessed_image, image_with_bbox, detected_objects = \
-                    opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
+                    opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
                     
                 frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)
                 
             elif data.selectedModel == "thermal3":
                 # convert image to black & white 
                 preprocessed_image, image_with_bbox, detected_objects = \
-                    opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
+                    opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
                 # prepare image before model input
                 input_size = get_input_size(interpreter)
                 preprocessed_image =  cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)
