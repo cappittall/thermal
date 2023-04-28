@@ -16,7 +16,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import FileResponse
 import sys
 
-from tools.cv_detection import bbox_iou, bind_opencv_result_on_frame, clip_bbox, preprocess_image_and_detect_pedestrian
+from tools.cv_detection import bind_opencv_result_on_frame, clip_bbox
+
 sys.path.append(os.path.join(os.getcwd(), "tools/"))
 
 from pydantic import BaseModel
@@ -28,12 +29,12 @@ import tensorflow as tf
 
 from sort.sort import Sort
 from tools.pedesterian_detector import CV2PedestrianDetector
-
+from tools.pedestrian_counter import LineCounter, LineCounterAnnotator
 from dataclasses import dataclass
 import supervision
 print("supervision.__version__:", supervision.__version__)
 from supervision.tools.detections import Detections, BoxAnnotator
-from supervision.tools.line_counter import LineCounter, LineCounterAnnotator
+# from supervision.tools.line_counter import LineCounter, LineCounterAnnotator
 from supervision.geometry.dataclasses import Point
 from supervision.draw.color import ColorPalette
 
@@ -231,7 +232,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             elif data.selectedModel == "thermal3":
                 # convert image to black & white 
                 preprocessed_image, image_with_bbox, detected_objects = \
-                    preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
+                    opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel)
                 # prepare image before model input
                 input_size = get_input_size(interpreter)
                 preprocessed_image =  cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)

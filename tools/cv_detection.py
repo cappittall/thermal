@@ -120,7 +120,7 @@ def clip_bbox(image_shape, bbox):
     x_max = min(width, x_max)
     y_max = min(height, y_max)
     return x_min, y_min, x_max, y_max
-
+""" 
 def calculate_red_yellow_percentage(image, bbox):
     x_min, y_min, x_max, y_max = bbox
     cropped = image[y_min:y_max, x_min:x_max]
@@ -148,9 +148,9 @@ def calculate_red_yellow_percentage(image, bbox):
     red_yellow_pixels = cv2.countNonZero(mask_red_yellow)
     total_pixels = cropped.size // 3
 
-    return red_yellow_pixels / total_pixels
+    return red_yellow_pixels / total_pixels """
 
-def calculate_blue_percentage(image, bbox):
+""" def calculate_blue_percentage(image, bbox):
     x_min, y_min, x_max, y_max = bbox
     cropped = image[y_min:y_max, x_min:x_max]
     if cropped.size == 0:
@@ -163,34 +163,34 @@ def calculate_blue_percentage(image, bbox):
     blue_pixels = cv2.countNonZero(mask)
     total_pixels = cropped.size // 3
 
-    return blue_pixels / total_pixels
+    return blue_pixels / total_pixels """
 
-def is_bbox_inside(bbox1, bbox2):
+""" def is_bbox_inside(bbox1, bbox2):
     x1, y1, w1, h1 = bbox1
     x2, y2, w2, h2 = bbox2
 
-    return x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
+    return x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2) """
 
-# filter abonormal shapes 
+""" # filter abonormal shapes 
 def is_valid_aspect_ratio(bbox, min_ratio=0.4, max_ratio=1.8):
     x, y, w, h = bbox
     aspect_ratio = h / w
 
-    return min_ratio <= aspect_ratio <= max_ratio
+    return min_ratio <= aspect_ratio <= max_ratio """
 
-def convert_to_grayscale_and_blur(image):
+""" def convert_to_grayscale_and_blur(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
-    return blurred_image
+    return blurred_image """
 
 
-def threshold_image(blurred_image, threshold_value):
+""" def threshold_image(blurred_image, threshold_value):
     normalized_gray = cv2.normalize(blurred_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     _, thresh_image = cv2.threshold(normalized_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return thresh_image
+    return thresh_image """
 
 
-def apply_morphological_operations(thresh_image, erode_iterations=1, dilate_iterations=1):
+""" def apply_morphological_operations(thresh_image, erode_iterations=1, dilate_iterations=1):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     eroded_image = cv2.erode(thresh_image, kernel, iterations=1)
     dilated_image = cv2.dilate(eroded_image, kernel, iterations=1)
@@ -202,10 +202,10 @@ def apply_morphological_operations(thresh_image, erode_iterations=1, dilate_iter
     eroded_image2 = cv2.erode(eroded_image2, kernel, iterations=erode_iterations)
     dilated_image2 = cv2.dilate(eroded_image2, kernel, iterations=dilate_iterations)
     
-    return dilated_image2
+    return dilated_image2 """
 
 
-def apply_watershed_algorithm(image, dilated_image2, maskSize, threshold_value):
+""" def apply_watershed_algorithm(image, dilated_image2, maskSize, threshold_value):
     distance_transform = cv2.distanceTransform(dilated_image2, cv2.DIST_L2, maskSize)
     _, sure_fg = cv2.threshold(distance_transform, threshold_value * distance_transform.max(), 255, 0)
     sure_fg = np.uint8(sure_fg)
@@ -216,9 +216,9 @@ def apply_watershed_algorithm(image, dilated_image2, maskSize, threshold_value):
     markers[unknown == 255] = 0
     markers = cv2.watershed(image, markers)
     
-    return markers
+    return markers """
 
-
+""" 
 def process_markers_and_draw_bboxes(image, markers, model, min_size=40, max_iou=0.5, blue_threshold=0.0, red_yellow__threshold=1.0):
     height, width, _ = image.shape
     filtered_bboxes = []
@@ -262,16 +262,16 @@ def process_markers_and_draw_bboxes(image, markers, model, min_size=40, max_iou=
 
                 filtered_bboxes_normalized.append(obj)
 
-    return filtered_bboxes_normalized
+    return filtered_bboxes_normalized """
 
-def preprocess_image_and_detect_pedestrian(image, blue_threshold, red_yellow__threshold, model, min_size=40, max_iou=0.5, maskSize=5, threshold_value=0.5, erode_iterations=1, dilate_iterations=1):
+""" def preprocess_image_and_detect_pedestrian(image, blue_threshold, red_yellow__threshold, model, min_size=40, max_iou=0.5, maskSize=5, threshold_value=0.5, erode_iterations=1, dilate_iterations=1):
     blurred_image = convert_to_grayscale_and_blur(image)
     thresh_image = threshold_image(blurred_image, threshold_value)
     dilated_image2 = apply_morphological_operations(thresh_image, erode_iterations, dilate_iterations)
     markers = apply_watershed_algorithm(image, dilated_image2, maskSize, threshold_value)
     filtered_bboxes_normalized = process_markers_and_draw_bboxes(image, markers, model, min_size, max_iou, blue_threshold, red_yellow__threshold)
 
-    return dilated_image2, image, filtered_bboxes_normalized
+    return dilated_image2, image, filtered_bboxes_normalized """
 
 def bind_opencv_result_on_frame(image1, image2, frame):
     small_width = 200

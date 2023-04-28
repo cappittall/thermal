@@ -1,0 +1,49 @@
+uvicorn detect2:app --host 0.0.0.0 --port 8000 --reload
+
+-----opencv çalışmasıyla ilgil sorunlar
+
+- tespit
+
+	--masklarda katman mantığı kullanımı (katmanlar.py)
+
+
+	her videoda farklı kalibrasyon olacağı için, kayıt yüksekliğine ve insanların yüksekliğine göre değişir
+	3d katman çıkarılıp en üst noktanın referans alınması
+	ilk tespitin doğruluğu için
+
+	yine tespit doğrulama için çerçevelerde min max en, min max boy limitleri belirle
+
+
+- count 
+
+	--geçiş yaparsa sayıyı artırıp beklemeli, tekrar yön değişirse -1
+
+	kadrajda takip edilmesi, aynı kişi ters yöne dönerse ekleme yerine geri düşürmesi  (a1) (a7 sonları)
+	çizgiye yakın noktada duruyosa sürekli artan rakamlar sorunu (111b, yatay çizgi 40-50)
+
+
+
+- performans
+
+	4x hızdaki videoda (b01) dahi yavaş oynatması
+	performans sorunu sonucunda ara takılmalar ve bunun sonucunda kaybolan tracker(111a) ve hatalı sayım
+	mobil cihaz linux performans testi
+
+
+
+
+
+-----kendi sistemime dahil etmem yada uyarlamamla ilgil sorunlar 
+
++	1 en sade şekilde zaruri olan kısımları kendi koduma dahil etmem, (ilk tespit ve sayım aynı,-track eklenmeli
+	2 mevcut sistemden kullanmayacağım kısımların elemem
+	3 sistemin uyarlanıp hazır kullanılması, sadece entegrasyonların yapılması
+	4 hazır sistem ve opencv yerine model kullanımı
+
+
+
+
+
+
+belli senaryolar için belli kalibrasyonlarla sorun çözülebilir. Her senaryoda tek kalibrasyonda başarı oranı ne olur, yerine göre kalibrasyon yapıldığı halde, tek kalibrasyonla tüm senaryolarda en fazla başarı oranını test et
+
