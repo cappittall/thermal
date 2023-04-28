@@ -207,7 +207,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             
         # get tracker hystory. Inıt tracker
         tracker_histrory = data.lineValues[5] 
-        tracker = Sort(max_age=tracker_histrory , min_hits=0, iou_threshold=.40)
+        tracker = Sort(max_age=tracker_histrory , min_hits=0, iou_threshold=.30)
         
         # counter 
         LINE_START = Point(0, int(height * roi)  ) if yon=="horizontal" else Point(int(width * roi), 0 )
