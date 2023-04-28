@@ -165,7 +165,8 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     # screen image size 
     width = 960
     height = 720
-    
+    desired_frame_rate = 24  # Set your desired frame rate
+
     # detected bbox =  x: cx - offset , y: cy - offset, x2: cx + offset, y2: cy + offset 
     offset = 10
     
@@ -175,7 +176,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     # global variables
     global cap, interpreter, VIDEO_PATH, MODEL_PATH, frame_count, \
             tracker, tracker_histrory, alert, det_line_pre, trdata, time2, \
-            line_counter, line_annotator, box_annotator, opencv_detector
+            line_counter, line_annotator, box_annotator, opencv_detector, skip_frames, frame_number
     
     # stoping loop setups
     if not data.start:
@@ -194,6 +195,11 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         VIDEO_PATH = "data/videos/" + data.selectedVideo
         MODEL_PATH = "models/tflites/" + data.selectedModel
         cap = cv2.VideoCapture(VIDEO_PATH)
+        original_frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
+        skip_frames = int(original_frame_rate / desired_frame_rate)
+        frame_number = 0
+        print('skip_frames', skip_frames,' Frame nr: ', frame_number )
+        
         #
         if not data.selectedModel == "opencv": 
             interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
@@ -201,7 +207,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             
         # get tracker hystory. Inıt tracker
         tracker_histrory = data.lineValues[5] 
-        tracker = Sort(max_age=tracker_histrory , min_hits=0, iou_threshold=.20)
+        tracker = Sort(max_age=tracker_histrory , min_hits=0, iou_threshold=.40)
         
         # counter 
         LINE_START = Point(0, int(height * roi)  ) if yon=="horizontal" else Point(int(width * roi), 0 )
@@ -213,7 +219,10 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         box_annotator = BoxAnnotator(color=ColorPalette(), thickness=1, text_thickness=1, text_scale=1)
         opencv_detector = CV2PedestrianDetector()
         
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
     success, im = cap.read()
+    frame_number += skip_frames
+    
     if success:
         video_ratio = im.shape[1]/im.shape[0]
         frame = cv2.resize(im, (width, int(width/video_ratio) ))
@@ -303,7 +312,8 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
 
             response_json = json.dumps(response_data)
             return Response(response_json, media_type="application/json")
-    
+        
+        
     else:
         cap.release()
         cap = None
