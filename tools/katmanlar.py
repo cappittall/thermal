@@ -28,12 +28,13 @@ for i, renk in enumerate(renkler):
     print(renkler_dizi, '\n')
     
 
-cap = cv2.VideoCapture('111.mp4')
+cap = cv2.VideoCapture('data/videos/111b.mp4')
 
 
 while True:
     ret, frame = cap.read()
     if not ret:
+        print('here')
         break
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)

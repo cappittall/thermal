@@ -120,6 +120,30 @@ def clip_bbox(image_shape, bbox):
     x_max = min(width, x_max)
     y_max = min(height, y_max)
     return x_min, y_min, x_max, y_max
+
+
+def bind_opencv_result_on_frame(image1, image2, frame):
+    small_width = 200
+    small_height = int(small_width * image1.shape[0] / image1.shape[1])
+    resized_image1 = cv2.resize(image1, (small_width, small_height))
+    resized_image2 = cv2.resize(image2, (small_width, small_height))
+
+    # Convert both images to the same color space (BGR)
+    if len(resized_image1.shape) == 2:  # Grayscale image
+        resized_image1 = cv2.cvtColor(resized_image1, cv2.COLOR_GRAY2BGR)
+    if len(resized_image2.shape) == 2:  # Grayscale image
+        resized_image2 = cv2.cvtColor(resized_image2, cv2.COLOR_GRAY2BGR)
+
+    # Stack the two images horizontally
+    stacked_images = np.hstack((resized_image1, resized_image2))
+
+    frame_height, frame_width, _ = frame.shape
+    top_left_x = frame_width - stacked_images.shape[1]
+    top_left_y = frame_height - stacked_images.shape[0]
+    frame[top_left_y:frame_height, top_left_x:frame_width] = stacked_images
+
+    return frame
+
 """ 
 def calculate_red_yellow_percentage(image, bbox):
     x_min, y_min, x_max, y_max = bbox
@@ -272,25 +296,3 @@ def process_markers_and_draw_bboxes(image, markers, model, min_size=40, max_iou=
     filtered_bboxes_normalized = process_markers_and_draw_bboxes(image, markers, model, min_size, max_iou, blue_threshold, red_yellow__threshold)
 
     return dilated_image2, image, filtered_bboxes_normalized """
-
-def bind_opencv_result_on_frame(image1, image2, frame):
-    small_width = 200
-    small_height = int(small_width * image1.shape[0] / image1.shape[1])
-    resized_image1 = cv2.resize(image1, (small_width, small_height))
-    resized_image2 = cv2.resize(image2, (small_width, small_height))
-
-    # Convert both images to the same color space (BGR)
-    if len(resized_image1.shape) == 2:  # Grayscale image
-        resized_image1 = cv2.cvtColor(resized_image1, cv2.COLOR_GRAY2BGR)
-    if len(resized_image2.shape) == 2:  # Grayscale image
-        resized_image2 = cv2.cvtColor(resized_image2, cv2.COLOR_GRAY2BGR)
-
-    # Stack the two images horizontally
-    stacked_images = np.hstack((resized_image1, resized_image2))
-
-    frame_height, frame_width, _ = frame.shape
-    top_left_x = frame_width - stacked_images.shape[1]
-    top_left_y = frame_height - stacked_images.shape[0]
-    frame[top_left_y:frame_height, top_left_x:frame_width] = stacked_images
-
-    return frame

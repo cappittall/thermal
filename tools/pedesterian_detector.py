@@ -143,6 +143,7 @@ class CV2PedestrianDetector:
             points = np.where(markers == i)
             x, y, w, h = cv2.boundingRect(np.array([points[1], points[0]]).T)
             x2, y2 = x+w, y+h
+            
             if model == "opencv":
                 blue_percentage = self.calculate_blue_percentage(image, (x, y, x2, y2))
                 red_yellow_percentage = self.calculate_red_yellow_percentage(image, (x, y, x2, y2))
@@ -154,7 +155,7 @@ class CV2PedestrianDetector:
             is_red_yellow = red_yellow_percentage > red_yellow__threshold
             
             if w >= min_size and h >= min_size and self.is_valid_aspect_ratio((x,y,w,h)) and is_blue and is_red_yellow:
-                current_bbox = (x, y,      w, h)
+                current_bbox = (x, y, w, h)
                 obj['bbox'] = [y / height, x / width, (y + h) / height, (x + w) / width]
 
                 should_add = True
@@ -178,10 +179,11 @@ class CV2PedestrianDetector:
 
         return filtered_bboxes_normalized
 
-    def preprocess_image_and_detect_pedestrian(self, image, blue_threshold, red_yellow__threshold, model="opencv", min_size=70, max_iou=0.5, maskSize=5, threshold_value=0.5, erode_iterations=1, dilate_iterations=1):
+    def preprocess_image_and_detect_pedestrian(self, image, blue_threshold, red_yellow__threshold, model="opencv", min_size=70, max_iou=0.5, maskSize=3, threshold_value=0.7, erode_iterations=1, dilate_iterations=2):
         blurred_image = self.convert_to_grayscale_and_blur(image)
         thresh_image = self.threshold_image(blurred_image, threshold_value)
         dilated_image2 = self.apply_morphological_operations(thresh_image, erode_iterations, dilate_iterations)
+        if model != "opencv": return dilated_image2
         markers = self.apply_watershed_algorithm(image, dilated_image2, maskSize, threshold_value)
         filtered_bboxes_normalized = self.process_markers_and_draw_bboxes(image, markers, model, min_size, max_iou, blue_threshold, red_yellow__threshold)
 

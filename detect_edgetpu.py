@@ -25,7 +25,13 @@ import numpy as np
 
 import cv2
 import time
-import tensorflow as tf
+
+# Edge tpu libraries
+from pycoral.adapters.common import input_size
+from pycoral.adapters.detect import get_objects
+from pycoral.utils.dataset import read_label_file
+from pycoral.utils.edgetpu import make_interpreter
+from pycoral.utils.edgetpu import run_inference
 
 from sort.sort import Sort
 from tools.pedesterian_detector import CV2PedestrianDetector
@@ -53,12 +59,6 @@ SERVER="localhost:8500"
 detect_process = None
 result_queue = Queue()
 
-model_paths = ["models/tflites/thermal.tflite", 
-               "models/tflites/thermal2.tflite", 
-               "models/tflites/thermal3.tflite", 
-               ]
-
-MODEL_PATH = model_paths[1]
 VIDEO_PATH=""
 processes = []
 REDETECT=True
@@ -92,51 +92,7 @@ class LineValuesAndCheckboxes(BaseModel):
     selectedModel: str
     start: bool
     use_tracker: bool
-
-## Tensorflow lite prediction side  
-def preprocess_input(image, input_size):
-    resized_image = cv2.resize(image, input_size )
-    normalized_image = resized_image.astype(np.uint8) #/ 255.0
-    input_data = np.expand_dims(normalized_image, axis=0)
-    return input_data
-
-def get_input_size(interpreter):
-    input_details = interpreter.get_input_details()
-    input_shape = input_details[0]['shape']
-    input_size = input_shape[1:3]  # Assuming the input shape is in the format [batch, height, width, channels]
-    return input_size
-
-def extract_detected_objects(interpreter, min_score_thresh = 0.5 ):
-    output_details = interpreter.get_output_details()
-    scores = interpreter.get_tensor(output_details[0]['index'])
-    boxes = interpreter.get_tensor(output_details[1]['index'])
-    num_detections = interpreter.get_tensor(output_details[2]['index'])
-    classes = interpreter.get_tensor(output_details[3]['index'])  
-    detected_objects_list = []
-
-    for i in range(int(num_detections[0])):
-        if scores[0][i] >= min_score_thresh:
-            detected_obj = {
-                'bbox': boxes[0][i].tolist(),
-                'class': int(classes[0][i]),
-                'score': scores[0][i]
-            }
-            detected_objects_list.append(detected_obj)
-
-    return detected_objects_list
-
-def run_prediction(interpreter, input_data):
-
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    interpreter.set_tensor(input_details[0]['index'], input_data)
-    interpreter.invoke()
-    predictions = interpreter.get_tensor(output_details[0]['index'])
-    
-    detected_objects = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
-    # At the end of the function, put the detected_objects into the result_queue
-    return detected_objects
-            
+           
 @app.get("/")
 def read_root(request:Request=None):
     try: 
@@ -145,7 +101,7 @@ def read_root(request:Request=None):
     except: pass
 
     videos={ i:i for i in os.listdir('data/videos/')}
-    models={ i:i for i in os.listdir('models/tflites/') if i.endswith('.tflite')}
+    models={ i:i for i in os.listdir('models/edges/') if i.endswith('.tflite')}
     if os.path.exists('data/initial.txt'): 
         initial_pos = [int(value) for value in open('data/initial.txt', 'r').read().splitlines()]
     else:initial_pos=[50,50,40] # 0: dikey 1: yatay 2,3: boş 4: DETECTION_THRESHOLD
@@ -176,7 +132,8 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     # global variables
     global cap, interpreter, VIDEO_PATH, MODEL_PATH, frame_count, \
             tracker, tracker_histrory, alert, det_line_pre, trdata, time2, \
-            line_counter, line_annotator, box_annotator, opencv_detector, skip_frames, frame_number
+            line_counter, line_annotator, box_annotator, opencv_detector, \
+            skip_frames, frame_number, inference_size
     
     # stoping loop setups
     if not data.start:
@@ -193,7 +150,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         # Initial setup & read initial setups in order to set initials
         with open('data/initial.txt', 'w') as f: f.write('\n'.join(map(str, data.lineValues)))
         VIDEO_PATH = "data/videos/" + data.selectedVideo
-        MODEL_PATH = "models/tflites/" + data.selectedModel
+        MODEL_PATH = "models/edges/" + data.selectedModel
         cap = cv2.VideoCapture(VIDEO_PATH)
         original_frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
         skip_frames = int(original_frame_rate / desired_frame_rate)
@@ -202,8 +159,9 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         
         #
         if not data.selectedModel == "opencv": 
-            interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+            interpreter = make_interpreter(MODEL_PATH)
             interpreter.allocate_tensors()
+            inference_size = input_size(interpreter)
             
         # get tracker hystory. Inıt tracker
         tracker_histrory = data.lineValues[5] 
@@ -235,36 +193,51 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
             if data.selectedModel == "opencv":
                 preprocessed_image, image_with_bbox, detected_objects = \
                     opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
-                    
-                frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)
-                
-            elif data.selectedModel == "thermal3":
-                # convert image to black & white 
-                preprocessed_image = opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
-                # prepare image before model input
-                input_size = get_input_size(interpreter)
-                preprocessed_image =  cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)
-                input_data = preprocess_input(preprocessed_image, input_size=input_size)
+                                   
+                detections = []
+                for obj in detected_objects:
+                    y_min, x_min, y_max, x_max = obj['bbox']
+                    x_min, y_min, x_max, y_max = clip_bbox(frame.shape, (x_min, y_min, x_max, y_max))
+                    detections.append(np.array([x_min, y_min, x_max, y_max, obj['score'], obj['class'] ]))
+            
+            else:
+                # prepare image before model input   
+                if "thermal3" in data.selectedModel:
+                    # convert image to black & white 
+                    preprocessed_image = opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
+                    preprocessed_image = cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)
+                else: 
+                    preprocessed_image = im.copy() 
+                                   
+                input_data = cv2.resize(preprocessed_image, inference_size)
                 # prediction
-                run_prediction(interpreter, input_data)
-                detected_objects = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
+                run_inference(interpreter, input_data.tobytes())
+                objs = get_objects(interpreter, DETECTION_THRESHOLD )
+                ## 
+                image_with_bbox = input_data.copy()
+                print("Objs : ", objs)
+                detections = []
+                for obj in objs:
+                    x1,y1,x2,y2 = obj.bbox
+                    sqrm2 = (x2-x1) * (y2 - y1) / 1000
+                    if sqrm2 > 110 : continue
+                    cv2.rectangle(image_with_bbox, (x1, y1), (x2, y2),(0,0,255),2)
+                    cv2.putText(image_with_bbox, f'{obj.score * 100:.0f}%', (obj.bbox.xmin, obj.bbox.ymin + 20), cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+                    cv2.putText(image_with_bbox, f'{sqrm2:.0f} m2', (obj.bbox.xmin, obj.bbox.ymin + 60), cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+                    detections.append([obj.bbox.xmin / inference_size[0] , obj.bbox.ymin / inference_size[1], 
+                                        obj.bbox.xmax / inference_size[0],  obj.bbox.ymax / inference_size[1], 
+                                        obj.score, obj.id])
                 
-            else: 
-                input_size = get_input_size(interpreter)
-                input_data = preprocess_input(frame.copy(), input_size=input_size)
-                run_prediction(interpreter, input_data)
-                detected_objects = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
-                        
-            tracker_obj = []
-            for obj in detected_objects:
-                y_min, x_min, y_max, x_max = obj['bbox']
-                x_min, y_min, x_max, y_max = clip_bbox(frame.shape, (x_min, y_min, x_max, y_max))
-                tracker_obj.append(np.array([x_min, y_min, x_max, y_max, obj['score'], obj['class'] ]))
                 
-            if not tracker_obj: 
-                tracker_obj = np.empty((0,7))
                 
-        trdata = tracker.update(np.array(tracker_obj))
+        # bing input image and detection image on right bottom                
+        frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)
+        # prepare detections if not any, assign empty numpy array.
+        if not detections: detections = np.empty((0,7))
+        # update tracker.
+        print("Detections: ", detections)
+        trdata = tracker.update(np.array(detections))
+        
         if trdata.any():
             xyxy = []
             confidence = []
