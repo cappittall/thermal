@@ -248,7 +248,6 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
                 # Calculate the center point (cx, cy)
                 x_min, y_min, x_max, y_max = x_min * width,  y_min * height, x_max * width, y_max * height
                 sqrm2 = int(((x_max-x_min) * (y_max-y_min)) / 1000)
-                if sqrm2 > 500: continue
                 cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2           
                 xyxy.append([cx - offset, cy - offset, cx + offset, cy + offset])  
                 confidence.append(score)

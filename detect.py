@@ -176,7 +176,8 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
     # global variables
     global cap, interpreter, VIDEO_PATH, MODEL_PATH, frame_count, \
             tracker, tracker_histrory, alert, det_line_pre, trdata, time2, \
-            line_counter, line_annotator, box_annotator, opencv_detector, skip_frames, frame_number
+            line_counter, line_annotator, box_annotator, opencv_detector, \
+            skip_frames, frame_number, inference_size
     
     # stoping loop setups
     if not data.start:
@@ -204,6 +205,7 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
         if not data.selectedModel == "opencv": 
             interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
             interpreter.allocate_tensors()
+            inference_size = get_input_size(interpreter)
             
         # get tracker hystory. Inıt tracker
         tracker_histrory = data.lineValues[5] 
@@ -233,38 +235,50 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
 
             # trackers.clear()                              
             if data.selectedModel == "opencv":
-                preprocessed_image, image_with_bbox, detected_objects = \
+                preprocessed_image, image_with_bbox, objs = \
                     opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
-                    
-                frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)
+                detections = []
+                for obj in objs:
+                    y_min, x_min, y_max, x_max = obj['bbox']
+                    x_min, y_min, x_max, y_max = clip_bbox(frame.shape, (x_min, y_min, x_max, y_max))
+                    detections.append(np.array([x_min, y_min, x_max, y_max, obj['score'], obj['class'] ]))
+                            
+            else: 
                 
-            elif data.selectedModel == "thermal3":
-                # convert image to black & white 
-                preprocessed_image = opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
-                # prepare image before model input
-                input_size = get_input_size(interpreter)
-                preprocessed_image =  cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)
-                input_data = preprocess_input(preprocessed_image, input_size=input_size)
+                 # prepare image before model input   
+                if "thermal3" in data.selectedModel:
+                    # convert image to black & white 
+                    preprocessed_image = opencv_detector.preprocess_image_and_detect_pedestrian(im.copy(), BLUE_THRESHOLD, RED_THRESHOLD, data.selectedModel, min_size= MIN_BOX_SIZE)
+                    preprocessed_image = cv2.cvtColor(preprocessed_image, cv2.COLOR_GRAY2BGR)
+                else: 
+                    preprocessed_image = im.copy() 
+
+                input_data = preprocess_input(preprocessed_image, input_size=inference_size)
                 # prediction
                 run_prediction(interpreter, input_data)
-                detected_objects = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
+                objs = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
                 
-            else: 
-                input_size = get_input_size(interpreter)
-                input_data = preprocess_input(frame.copy(), input_size=input_size)
-                run_prediction(interpreter, input_data)
-                detected_objects = extract_detected_objects(interpreter, min_score_thresh=DETECTION_THRESHOLD)
-                        
-            tracker_obj = []
-            for obj in detected_objects:
-                y_min, x_min, y_max, x_max = obj['bbox']
-                x_min, y_min, x_max, y_max = clip_bbox(frame.shape, (x_min, y_min, x_max, y_max))
-                tracker_obj.append(np.array([x_min, y_min, x_max, y_max, obj['score'], obj['class'] ]))
+                image_with_bbox = preprocessed_image.copy()
+                print("Objs : ", objs)
+                detections = []
+                for obj in objs:
+                    hh, ww, _ = image_with_bbox.shape
+                    y1_, x1_, y2_, x2_ = obj['bbox']
+                    # x_min, y_min, x_max, y_max = clip_bbox(frame.shape, (x_min, y_min, x_max, y_max))
+                    x1, y1, x2, y2 = int(x1_ * ww), int(y1_ * hh), int(x2_ * ww), int(y2_ * hh)
+                    sqrm2 = (x2-x1) * (y2 - y1) / 1000
+                    if sqrm2 > 110 : continue
+                    cv2.rectangle(image_with_bbox, (x1, y1), (x2, y2),(0,0,255),2)
+                    cv2.putText(image_with_bbox, f'{obj["score"] * 100:.0f}%', (x1, y1 + 20), cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+                    cv2.putText(image_with_bbox, f'{sqrm2:.0f} m2', (x1, y1 + 60), cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+                    
+                    detections.append([x1_, y1_, x2_, y2_, obj['score'], obj['class']])
                 
-            if not tracker_obj: 
-                tracker_obj = np.empty((0,7))
-                
-        trdata = tracker.update(np.array(tracker_obj))
+        # bing input image and detection image on right bottom                
+        frame = bind_opencv_result_on_frame(preprocessed_image, image_with_bbox, frame)            
+        
+        if not detections: detections = np.empty((0,7))
+        trdata = tracker.update(np.array(detections))
         if trdata.any():
             xyxy = []
             confidence = []
@@ -275,7 +289,6 @@ async def pedestal_tflite_model_test5x(data:LineValuesAndCheckboxes, request:Req
                 # Calculate the center point (cx, cy)
                 x_min, y_min, x_max, y_max = x_min * width,  y_min * height, x_max * width, y_max * height
                 sqrm2 = int(((x_max-x_min) * (y_max-y_min)) / 1000)
-                if sqrm2 > 500: continue
                 cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2           
                 xyxy.append([cx - offset, cy - offset, cx + offset, cy + offset])  
                 confidence.append(score)
